@@ -128,6 +128,8 @@ ErrorType BehaviorPlanner::RunOnce() {
   return kSuccess;
 }
 
+//lq comment 
+//core function
 ErrorType BehaviorPlanner::MultiBehaviorJudge(
     const decimal_t previous_desired_vel, LateralBehavior* mpdm_behavior,
     decimal_t* mpdm_desired_velocity) {
@@ -181,6 +183,9 @@ ErrorType BehaviorPlanner::MultiBehaviorJudge(
   }
 
   // * forward simulation
+  //lq comment 
+  //对每种潜在行为进行前向模拟，得到前向轨迹。
+  //有效的模拟结果将保存在 valid_behaviors、valid_forward_trajs 和 valid_surround_trajs 中。
   std::vector<LateralBehavior> valid_behaviors;
   vec_E<vec_E<common::Vehicle>> valid_forward_trajs;
   vec_E<std::unordered_map<int, vec_E<common::Vehicle>>> valid_surround_trajs;
@@ -210,6 +215,8 @@ ErrorType BehaviorPlanner::MultiBehaviorJudge(
   surround_trajs_ = valid_surround_trajs;
 
   // * judge forward trajs
+  //对有效的前向轨迹进行评估，选择最佳行为。
+  //评估结果包括选择的行为（winner_behavior）、对应的前向轨迹（winner_forward_traj）、评分（winner_score）和期望的速度（winner_desired_vel）
   int num_valid_behaviors = static_cast<int>(valid_behaviors.size());
   if (num_valid_behaviors < 1) {
     printf("[MPDM]No valid behaviors.\n");
@@ -343,6 +350,16 @@ ErrorType BehaviorPlanner::SimulateEgoBehavior(
       std::make_pair(ego_vehicle.id(), ego_semantic_vehicle));
 
   // ~ multi-agent forward
+  //lq comment
+  //生成forwards traj的地方
+  //多车辆前向模拟： 调用 MultiAgentSimForward 函数进行多车辆的前向模拟，
+  //模拟自车与其他车辆的交互。如果该模拟过程失败，转而使用 OpenloopSimForward 函数进行自车的开环前向模拟。
+
+ // MultiAgentSimForward： 这个函数用于模拟多个代理车辆的前向运动。
+//在每个时间步，它会更新所有语义车辆的状态，包括自车和周围车辆，考虑它们的相互影响。这是一个多智能体系统的模拟。
+//OpenloopSimForward： 这个函数用于单一车辆（自车）的开环模拟。
+//在每个时间步，它只更新自车的状态，不考虑其他车辆对自车的影响。这是一个开环模拟，自车的运动只由预定义的期望速度驱动。
+
   printf("[MPDM]simulating behavior %d.\n", static_cast<int>(ego_behavior));
   if (MultiAgentSimForward(ego_vehicle.id(), semantic_vehicle_set_tmp, traj,
                            surround_trajs) != kSuccess) {
@@ -398,6 +415,8 @@ ErrorType BehaviorPlanner::EvaluateMultiPolicyTrajs(
   return kSuccess;
 }
 
+//lq comment 
+//通过比较两条轨迹上对应位置的膨胀后的车辆是否发生碰撞来评估它们之间的安全性
 ErrorType BehaviorPlanner::EvaluateSafetyCost(
     const vec_E<common::Vehicle>& traj_a, const vec_E<common::Vehicle>& traj_b,
     decimal_t* cost) {
@@ -426,6 +445,8 @@ ErrorType BehaviorPlanner::EvaluateSafetyCost(
   return kSuccess;
 }
 
+//lq comment
+//用于综合评估给定行为策略的轨迹，考虑了效率、安全性和行为本身的成本
 ErrorType BehaviorPlanner::EvaluateSinglePolicyTraj(
     const LateralBehavior& behavior, const vec_E<common::Vehicle>& forward_traj,
     const std::unordered_map<int, vec_E<common::Vehicle>>& surround_traj,
@@ -517,9 +538,15 @@ ErrorType BehaviorPlanner::GetDesiredVelocityOfTrajectory(
   return kSuccess;
 }
 
+//lq comment
+//// end num_steps_forward for
+//traj生成处，他是模拟出来的！！
+//在每个时间步骤内，根据车辆的状态信息，将自车的状态添加到 traj 中。
+// 这样，最终的 traj 中存储了自车在多个时间步内的状态，形成了一个轨迹。
+//在整个模拟过程结束后，traj 包含了自车的前向轨迹信息。
 ErrorType BehaviorPlanner::MultiAgentSimForward(
     const int ego_id, const common::SemanticVehicleSet& semantic_vehicle_set,
-    vec_E<common::Vehicle>* traj,
+    vec_E<common::Vehicle>* traj,//Vehicle类，包括state类，包含速度，x,y,theta。还有id什么的
     std::unordered_map<int, vec_E<common::Vehicle>>* surround_trajs) {
   traj->clear();
   traj->push_back(semantic_vehicle_set.semantic_vehicles.at(ego_id).vehicle);
@@ -532,11 +559,12 @@ ErrorType BehaviorPlanner::MultiAgentSimForward(
     surround_trajs->at(v.first).push_back(v.second.vehicle);
   }
 
-  int num_steps_forward = static_cast<int>(sim_horizon_ / sim_resolution_);
+  int num_steps_forward = static_cast<int>(sim_horizon_ / sim_resolution_);//4.0/0.4 = 10;
 
   common::SemanticVehicleSet semantic_vehicle_set_tmp = semantic_vehicle_set;
 
   TicToc timer;
+  //每个循环相当于一个时间步骤
   for (int i = 0; i < num_steps_forward; i++) {
     timer.tic();
     std::unordered_map<int, State> state_cache;
@@ -594,6 +622,7 @@ ErrorType BehaviorPlanner::MultiAgentSimForward(
     // printf("[Summary]single propogate once time: %lf.\n", timer.toc());
 
     // use state cache to update vehicle set
+
     for (auto& s : state_cache) {
       semantic_vehicle_set_tmp.semantic_vehicles.at(s.first).vehicle.set_state(
           s.second);
@@ -609,6 +638,8 @@ ErrorType BehaviorPlanner::MultiAgentSimForward(
   return kSuccess;
 }
 
+//lq comment
+//主要用于在行为规划过程中，根据当前的横向行为构建车辆的参考车道，以供后续的行为规划和轨迹规划使用
 ErrorType BehaviorPlanner::ConstructReferenceLane(
     const LateralBehavior& lat_behavior, Lane* lane) {
   if (map_itf_ == nullptr) return kWrongStatus;
@@ -697,6 +728,8 @@ ErrorType BehaviorPlanner::ConstructReferenceLane(
   return kSuccess;
 }
 
+//lq comment
+//sample 构建车道
 ErrorType BehaviorPlanner::ConstructLaneFromSamples(
     const vec_E<Vecf<2>>& samples, Lane* lane) {
   double d = 0.0;

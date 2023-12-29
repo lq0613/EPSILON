@@ -133,6 +133,8 @@ ErrorType SscPlanner::RunOnce() {
     return kWrongStatus;
   }
 
+//lq comment
+//初始轨迹的传递是依靠SemanticMapManager 中有ego_behavior的成员
   if (map_itf_->GetForwardTrajectories(&forward_behaviors_, &forward_trajs_,
                                        &surround_forward_trajs_) != kSuccess) {
     LOG(ERROR) << "[Ssc]fail to get forward trajectories.";
@@ -172,6 +174,9 @@ ErrorType SscPlanner::RunOnce() {
     // p_ssc_map_->InflateObstacleGrid(ego_vehicle_.param());
     // printf("[SscPlanner] InflateObstacleGrid time cost: %lf ms\n",
     //        timer_infl.toc());
+    //lq comment
+    //这里是corridor生成，传入了初始轨迹forward_trajs_fs_，SscPlanner的成员
+    //但是他是哪里来的呢？
     if (p_ssc_map_->ConstructCorridorUsingInitialTrajectory(
             p_ssc_map_->p_3d_grid(), forward_trajs_fs_[i]) != kSuccess) {
       LOG(ERROR) << "[Ssc]fail to construct corridor for behavior " << i;
@@ -430,6 +435,8 @@ ErrorType SscPlanner::CorridorFeasibilityCheck(
   return kSuccess;
 }
 
+//lq comment
+//forward_trajs_fs是从这里拿到的
 ErrorType SscPlanner::StateTransformForInputData() {
   vec_E<State> global_state_vec;
   vec_E<Vec2f> global_point_vec;
