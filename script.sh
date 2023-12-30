@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # 创建一个新的tmux会话
 tmux new-session -d -s my_session
 
@@ -9,7 +8,7 @@ sleep 5
 
 # 在第二个窗格中进入phy_simulator/rviz目录并启动rviz
 tmux split-window -v -t my_session:0
-tmux send-keys -t my_session:0 "roscd phy_simulator/rviz/" C-m
+tmux send-keys -t my_session:0 "roscd /home/liuqiao/project/catkin_ws/src/EPSILON/core/phy_simulator/rviz/" C-m
 tmux send-keys -t my_session:0 "rviz -d phy_simulator_planning.rviz" C-m
 
 # 在第三个窗格中启动test_ssc_with_eudm_ros.launch
