@@ -311,6 +311,69 @@ ErrorType BehaviorPlanner::OpenloopSimForward(
 
     // * update and trace
     cur_ego_vehicle.set_state(ego_state);
+    std::cout << "lqlqlql" << std::endl;
+    ego_state.output("/home/liuqiao/ego_state.txt");
+    for (auto& s : state_cache) {
+      semantic_vehicle_set_tmp.semantic_vehicles.at(s.first).vehicle.set_state(
+          s.second);
+      surround_trajs->at(s.first).push_back(
+          semantic_vehicle_set_tmp.semantic_vehicles.at(s.first).vehicle);
+    }
+    traj->push_back(cur_ego_vehicle);
+
+  }
+  return kSuccess;
+}
+
+ErrorType BehaviorPlanner::SampleByBezier(
+    const common::SemanticVehicle& ego_semantic_vehicle,
+    const common::SemanticVehicleSet& agent_vehicles,
+    vec_E<common::Vehicle>* traj,
+    std::unordered_map<int, vec_E<common::Vehicle>>* surround_trajs) {
+  traj->clear();
+  traj->push_back(ego_semantic_vehicle.vehicle);
+  surround_trajs->clear();
+  for (const auto v : agent_vehicles.semantic_vehicles) {
+    surround_trajs->insert(std::pair<int, vec_E<common::Vehicle>>(
+        v.first, vec_E<common::Vehicle>()));
+    surround_trajs->at(v.first).push_back(v.second.vehicle);
+  }
+
+  int num_steps_forward = static_cast<int>(sim_horizon_ / sim_resolution_);
+  common::Vehicle cur_ego_vehicle = ego_semantic_vehicle.vehicle;
+  common::SemanticVehicleSet semantic_vehicle_set_tmp = agent_vehicles;
+  common::State ego_state;
+  for (int i = 0; i < num_steps_forward; i++) {
+    sim_param_.idm_param.kDesiredVelocity = reference_desired_velocity_;
+    if (planning::OnLaneForwardSimulation::PropagateOnce(
+            common::StateTransformer(ego_semantic_vehicle.lane),
+            cur_ego_vehicle, common::Vehicle(), sim_resolution_, sim_param_,
+            &ego_state) != kSuccess) {
+      return kWrongStatus;
+    }
+    std::unordered_map<int, State> state_cache;
+    for (auto& v : semantic_vehicle_set_tmp.semantic_vehicles) {
+      decimal_t desired_vel =
+          agent_vehicles.semantic_vehicles.at(v.first).vehicle.state().velocity;
+      sim_param_.idm_param.kDesiredVelocity = desired_vel;
+      common::State agent_state;
+      if (planning::OnLaneForwardSimulation::PropagateOnce(
+              common::StateTransformer(v.second.lane), v.second.vehicle,
+              common::Vehicle(), sim_resolution_, sim_param_,
+              &agent_state) != kSuccess) {
+        return kWrongStatus;
+      }
+      state_cache.insert(std::make_pair(v.first, agent_state));
+    }
+
+    bool is_collision = false;
+    map_itf_->CheckIfCollision(ego_semantic_vehicle.vehicle.param(), ego_state,
+                               &is_collision);
+    if (is_collision) return kWrongStatus;
+
+    // * update and trace
+    cur_ego_vehicle.set_state(ego_state);
+    ego_state.output("ego_state");
     for (auto& s : state_cache) {
       semantic_vehicle_set_tmp.semantic_vehicles.at(s.first).vehicle.set_state(
           s.second);
@@ -319,8 +382,10 @@ ErrorType BehaviorPlanner::OpenloopSimForward(
     }
     traj->push_back(cur_ego_vehicle);
   }
+
   return kSuccess;
 }
+
 
 ErrorType BehaviorPlanner::SimulateEgoBehavior(
     const common::Vehicle& ego_vehicle, const LateralBehavior& ego_behavior,
@@ -361,17 +426,18 @@ ErrorType BehaviorPlanner::SimulateEgoBehavior(
 //在每个时间步，它只更新自车的状态，不考虑其他车辆对自车的影响。这是一个开环模拟，自车的运动只由预定义的期望速度驱动。
 
   printf("[MPDM]simulating behavior %d.\n", static_cast<int>(ego_behavior));
-  if (MultiAgentSimForward(ego_vehicle.id(), semantic_vehicle_set_tmp, traj,
-                           surround_trajs) != kSuccess) {
-    printf("[MPDM]multi agent forward under %d failed.\n",
-           static_cast<int>(ego_behavior));
+  // if (MultiAgentSimForward(ego_vehicle.id(), semantic_vehicle_set_tmp, traj,
+  //                          surround_trajs) != kSuccess) {
+  //   printf("[MPDM]multi agent forward under %d failed.\n",
+  //          static_cast<int>(ego_behavior));
+  //   }
     if (OpenloopSimForward(ego_semantic_vehicle, semantic_vehicle_set, traj,
                            surround_trajs) != kSuccess) {
       printf("[MPDM]open loop forward under %d failed.\n",
              static_cast<int>(ego_behavior));
       return kWrongStatus;
     }
-  }
+  
   printf("[MPDM]behavior %d traj num of states: %d.\n",
          static_cast<int>(ego_behavior), static_cast<int>(traj->size()));
   return kSuccess;

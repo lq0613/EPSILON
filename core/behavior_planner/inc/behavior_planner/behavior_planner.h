@@ -99,6 +99,12 @@ class BehaviorPlanner : public Planner {
       vec_E<common::Vehicle>* traj,
       std::unordered_map<int, vec_E<common::Vehicle>>* surround_trajs);
 
+  ErrorType SampleByBezier(
+      const common::SemanticVehicle& ego_semantic_vehicle,
+      const common::SemanticVehicleSet& agent_vehicles,
+      vec_E<common::Vehicle>* traj,
+      std::unordered_map<int, vec_E<common::Vehicle>>* surround_trajs);
+
   ErrorType SimulateEgoBehavior(
       const common::Vehicle& ego_vehicle, const LateralBehavior& ego_behavior,
       const common::SemanticVehicleSet& semantic_vehicle_set,

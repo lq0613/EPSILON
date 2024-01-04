@@ -22,6 +22,24 @@ struct State {
     printf(" -- acceleration: %lf.\n", acceleration);
     printf(" -- steer: %lf.\n", steer);
   }
+  void output(const std::string& filename) const {
+        std::ofstream outfile(filename);
+
+        if (outfile.is_open()) {
+            outfile << "State:\n";
+            outfile << " -- time_stamp: " << time_stamp << ".\n";
+            outfile << " -- vec_position: (" << vec_position[0] << ", " << vec_position[1] << ").\n";
+            outfile << " -- angle: " << angle << ".\n";
+            outfile << " -- curvature: " << curvature << ".\n";
+            outfile << " -- velocity: " << velocity << ".\n";
+            outfile << " -- acceleration: " << acceleration << ".\n";
+            outfile << " -- steer: " << steer << ".\n";
+            outfile.close();
+            std::cout << "Data has been written to " << filename << std::endl;
+        } else {
+            std::cerr << "Unable to open file: " << filename << std::endl;
+        }
+    }
 
   Vec3f ToXYTheta() const {
     return Vec3f(vec_position(0), vec_position(1), angle);
