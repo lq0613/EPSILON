@@ -17,8 +17,8 @@ tmux split-window -v -t my_session:0
 tmux send-keys -t my_session:0 "roslaunch planning_integrated test_ssc_with_eudm_ros.launch" C-m
 
 # 在第四个窗格中启动onlane_ai_agent.launch
-tmux split-window -v -t my_session:0
-tmux send-keys -t my_session:0 "roslaunch ai_agent_planner onlane_ai_agent.launch" C-m
+# tmux split-window -v -t my_session:0
+# tmux send-keys -t my_session:0 "roslaunch ai_agent_planner onlane_ai_agent.launch" C-m
 
 # 在第五个窗格中启动phy_simulator_planning.launch
 tmux split-window -v -t my_session:0

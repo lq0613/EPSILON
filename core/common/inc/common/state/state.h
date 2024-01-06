@@ -2,6 +2,8 @@
 #define _COMMON_INC_COMMON_STATE_STATE_H__
 
 #include "common/basics/basics.h"
+#include <iostream>
+#include <fstream>
 
 namespace common {
 struct State {
@@ -37,7 +39,7 @@ struct State {
             outfile.close();
             std::cout << "Data has been written to " << filename << std::endl;
         } else {
-            std::cerr << "Unable to open file: " << filename << std::endl;
+            printf( "Unable to open file: ");
         }
     }
 

@@ -140,7 +140,7 @@ ErrorType SscPlanner::RunOnce() {
     LOG(ERROR) << "[Ssc]fail to get forward trajectories.";
     return kWrongStatus;
   }
-
+//forward_trajs_.clear();
   auto t_prepare = timer_prepare.toc();
   LOG(WARNING) << "[Ssc]prepare time cost: " << t_prepare << " ms";
 

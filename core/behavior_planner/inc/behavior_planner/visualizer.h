@@ -19,6 +19,8 @@
 
 namespace planning {
 
+//lq comment 
+//这个适配器的主要目的是将行为规划器生成的前向轨迹可视化，并通过ROS发布到指定的话题。可视化包括轨迹上的点和连接这些点的线，以及相应的Marker信息
 class BehaviorPlannerVisualizer {
  public:
   BehaviorPlannerVisualizer(ros::NodeHandle nh, BehaviorPlanner* ptr_bp,
@@ -28,6 +30,7 @@ class BehaviorPlannerVisualizer {
   }
 
   void Init() {
+    //话题名称
     std::string forward_traj_topic = std::string("/vis/agent_") +
                                      std::to_string(ego_id_) +
                                      std::string("/forward_trajs");

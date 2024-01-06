@@ -17,10 +17,14 @@ BehaviorPlannerServer::BehaviorPlannerServer(ros::NodeHandle nh,
       config_.kInputBufferSize);
 }
 
+//lq comment 
+//用于将语义地图数据推送到队列中
 void BehaviorPlannerServer::PushSemanticMap(const SemanticMapManager& smm) {
   if (p_input_smm_buff_) p_input_smm_buff_->try_enqueue(smm);
 }
 
+//lq comment
+//用于发布数据，是behavior_planner 的输出，输出了forward_trajs，
 void BehaviorPlannerServer::PublishData() {
   p_visualizer_->PublishDataWithStamp(ros::Time::now());
 }

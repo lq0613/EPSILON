@@ -1,0 +1,27 @@
+1.3
+git repo is under EPSILON not the catkin_ws.
+
+紫色的是ssc_traj，不显眼的灰色的和黄色的是forward_traj。
+不开启ai_agent的node可以提升速度，但是不能避障了。
+不清楚是使用开环模拟还是关闭agent_node 的原因。
+变卡肯定是ai_agent的原因.
+
+[SscPlannerServer]t 1704349902.159081, desired state (x,y,v,a,theta):(691.470032, -2959.717973, 13.074565, -0.081310, 2.331132)
+
+it seems like sample(just like in megvii) is the better way to get forward_traj. Hybrid_A* and RRT is not good.
+
+next step:
+record the screen while running the whole map.
+figure out why the outupt to txt is not useful.
+figure out why the vihecle cannot avoiding the collsion.
+replace the way to get forward traj.
+
+1.4
+不用fowards_traj也能跑,这样说也不确切，做了两个实验
+前端不生成forward_traj的时候，后端ssc有办法使用默认的（未验证）前端轨迹，让车跑起来。
+但是在ssc获取前端轨迹之后再清空了，就没办法跑起来了
+只看到了mpdm，没看到eudm
+
+1.6
+打开ai_agent之后，才输出成功，是不是不打开ai_agent，是没有开环闭环模拟初始轨迹的。
+

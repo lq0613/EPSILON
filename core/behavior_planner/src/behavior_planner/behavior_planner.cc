@@ -46,6 +46,8 @@ ErrorType BehaviorPlanner::RunRoutePlanner(const int nearest_lane_id) {
   }
   State ego_state;
   map_itf_->GetEgoState(&ego_state);
+  ego_state.output("/home/liuqiao/project/ego_state.txt");
+  ego_state.print();
   p_route_planner_->set_ego_state(ego_state);
   p_route_planner_->set_nearest_lane_id(nearest_lane_id);
   if (p_route_planner_->RunOnce() == kSuccess) {
@@ -74,7 +76,7 @@ ErrorType BehaviorPlanner::RunOnce() {
   }
   ego_id_ = ego_vehicle.id();
 
-  if (use_sim_state_) {
+  if (use_sim_state_) {//默认true
     RunRoutePlanner(ego_lane_id_by_pos);
   }
 
@@ -312,7 +314,8 @@ ErrorType BehaviorPlanner::OpenloopSimForward(
     // * update and trace
     cur_ego_vehicle.set_state(ego_state);
     std::cout << "lqlqlql" << std::endl;
-    ego_state.output("/home/liuqiao/ego_state.txt");
+    ego_state.output("/home/liuqiao/project/ego_state.txt");
+    ego_state.print();
     for (auto& s : state_cache) {
       semantic_vehicle_set_tmp.semantic_vehicles.at(s.first).vehicle.set_state(
           s.second);
@@ -331,57 +334,57 @@ ErrorType BehaviorPlanner::SampleByBezier(
     vec_E<common::Vehicle>* traj,
     std::unordered_map<int, vec_E<common::Vehicle>>* surround_trajs) {
   traj->clear();
-  traj->push_back(ego_semantic_vehicle.vehicle);
-  surround_trajs->clear();
-  for (const auto v : agent_vehicles.semantic_vehicles) {
-    surround_trajs->insert(std::pair<int, vec_E<common::Vehicle>>(
-        v.first, vec_E<common::Vehicle>()));
-    surround_trajs->at(v.first).push_back(v.second.vehicle);
-  }
+  // traj->push_back(ego_semantic_vehicle.vehicle);
+  // surround_trajs->clear();
+  // for (const auto v : agent_vehicles.semantic_vehicles) {
+  //   surround_trajs->insert(std::pair<int, vec_E<common::Vehicle>>(
+  //       v.first, vec_E<common::Vehicle>()));
+  //   surround_trajs->at(v.first).push_back(v.second.vehicle);
+  // }
 
-  int num_steps_forward = static_cast<int>(sim_horizon_ / sim_resolution_);
-  common::Vehicle cur_ego_vehicle = ego_semantic_vehicle.vehicle;
-  common::SemanticVehicleSet semantic_vehicle_set_tmp = agent_vehicles;
-  common::State ego_state;
-  for (int i = 0; i < num_steps_forward; i++) {
-    sim_param_.idm_param.kDesiredVelocity = reference_desired_velocity_;
-    if (planning::OnLaneForwardSimulation::PropagateOnce(
-            common::StateTransformer(ego_semantic_vehicle.lane),
-            cur_ego_vehicle, common::Vehicle(), sim_resolution_, sim_param_,
-            &ego_state) != kSuccess) {
-      return kWrongStatus;
-    }
-    std::unordered_map<int, State> state_cache;
-    for (auto& v : semantic_vehicle_set_tmp.semantic_vehicles) {
-      decimal_t desired_vel =
-          agent_vehicles.semantic_vehicles.at(v.first).vehicle.state().velocity;
-      sim_param_.idm_param.kDesiredVelocity = desired_vel;
-      common::State agent_state;
-      if (planning::OnLaneForwardSimulation::PropagateOnce(
-              common::StateTransformer(v.second.lane), v.second.vehicle,
-              common::Vehicle(), sim_resolution_, sim_param_,
-              &agent_state) != kSuccess) {
-        return kWrongStatus;
-      }
-      state_cache.insert(std::make_pair(v.first, agent_state));
-    }
+  // int num_steps_forward = static_cast<int>(sim_horizon_ / sim_resolution_);
+  // common::Vehicle cur_ego_vehicle = ego_semantic_vehicle.vehicle;
+  // common::SemanticVehicleSet semantic_vehicle_set_tmp = agent_vehicles;
+  // common::State ego_state;
+  // for (int i = 0; i < num_steps_forward; i++) {
+  //   sim_param_.idm_param.kDesiredVelocity = reference_desired_velocity_;
+  //   if (planning::OnLaneForwardSimulation::PropagateOnce(
+  //           common::StateTransformer(ego_semantic_vehicle.lane),
+  //           cur_ego_vehicle, common::Vehicle(), sim_resolution_, sim_param_,
+  //           &ego_state) != kSuccess) {
+  //     return kWrongStatus;
+  //   }
+  //   std::unordered_map<int, State> state_cache;
+  //   for (auto& v : semantic_vehicle_set_tmp.semantic_vehicles) {
+  //     decimal_t desired_vel =
+  //         agent_vehicles.semantic_vehicles.at(v.first).vehicle.state().velocity;
+  //     sim_param_.idm_param.kDesiredVelocity = desired_vel;
+  //     common::State agent_state;
+  //     if (planning::OnLaneForwardSimulation::PropagateOnce(
+  //             common::StateTransformer(v.second.lane), v.second.vehicle,
+  //             common::Vehicle(), sim_resolution_, sim_param_,
+  //             &agent_state) != kSuccess) {
+  //       return kWrongStatus;
+  //     }
+  //     state_cache.insert(std::make_pair(v.first, agent_state));
+  //   }
 
-    bool is_collision = false;
-    map_itf_->CheckIfCollision(ego_semantic_vehicle.vehicle.param(), ego_state,
-                               &is_collision);
-    if (is_collision) return kWrongStatus;
+  //   bool is_collision = false;
+  //   map_itf_->CheckIfCollision(ego_semantic_vehicle.vehicle.param(), ego_state,
+  //                              &is_collision);
+  //   if (is_collision) return kWrongStatus;
 
-    // * update and trace
-    cur_ego_vehicle.set_state(ego_state);
-    ego_state.output("ego_state");
-    for (auto& s : state_cache) {
-      semantic_vehicle_set_tmp.semantic_vehicles.at(s.first).vehicle.set_state(
-          s.second);
-      surround_trajs->at(s.first).push_back(
-          semantic_vehicle_set_tmp.semantic_vehicles.at(s.first).vehicle);
-    }
-    traj->push_back(cur_ego_vehicle);
-  }
+  //   // * update and trace
+  //   cur_ego_vehicle.set_state(ego_state);
+  //   ego_state.output("ego_state");
+  //   for (auto& s : state_cache) {
+  //     semantic_vehicle_set_tmp.semantic_vehicles.at(s.first).vehicle.set_state(
+  //         s.second);
+  //     surround_trajs->at(s.first).push_back(
+  //         semantic_vehicle_set_tmp.semantic_vehicles.at(s.first).vehicle);
+  //   }
+  //   traj->push_back(cur_ego_vehicle);
+  // }
 
   return kSuccess;
 }
@@ -394,7 +397,7 @@ ErrorType BehaviorPlanner::SimulateEgoBehavior(
     std::unordered_map<int, vec_E<common::Vehicle>>* surround_trajs) {
   const decimal_t max_backward_len = 10.0;
   decimal_t forward_lane_len =
-      std::max(ego_vehicle.state().velocity * 10.0, 50.0);
+      std::max(ego_vehicle.state().velocity * 10.0, 50.0);//10s或着50m为上限。
   common::Lane ego_reflane;
   if (map_itf_->GetRefLaneForStateByBehavior(
           ego_vehicle.state(), p_route_planner_->navi_path(), ego_behavior,
@@ -680,7 +683,7 @@ ErrorType BehaviorPlanner::MultiAgentSimForward(
         printf("[MPDM]fail to forward with leading vehicle.\n");
         return kWrongStatus;
       }
-
+    state.output("/home/liuqiao/project/state.txt");
       // update state
       state.time_stamp = init_stamp + (i + 1) * sim_resolution_;
       state_cache.insert(std::make_pair(v.first, state));

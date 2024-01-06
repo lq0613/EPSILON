@@ -32,7 +32,7 @@ class RRTStar {
 public:
     RRTStar(const Parameters& param, const Environment& env);
 
-    std::vector<std::vector<double>> SearchCoarseTrajectoryViaRRTStar();
+    ErrorType SearchCoarseTrajectoryViaRRTStar();
 
 public:
   using State = common::State;
@@ -65,6 +65,10 @@ private:
     std::vector<double> node_list_slt;
     std::vector<State> node_list;
     planning::BehaviorPlannerMapItf* map_itf_{nullptr};
+      // debug
+  vec_E<vec_E<common::Vehicle>> forward_trajs_;
+  std::vector<LateralBehavior> forward_behaviors_;
+  vec_E<std::unordered_map<int, vec_E<common::Vehicle>>> surround_trajs_;
 };
 
 RRTStar::RRTStar(const Parameters& param, const Environment& env)
@@ -72,11 +76,23 @@ RRTStar::RRTStar(const Parameters& param, const Environment& env)
     // Initialize other members as needed
 }
 
-std::vector<std::vector<double>> RRTStar::SearchCoarseTrajectoryViaRRTStar() {
+ErrorType RRTStar::SearchCoarseTrajectoryViaRRTStar() {
     // Implementation of the RRT* algorithm
+      // * get relevant information
+  common::SemanticVehicleSet semantic_vehicle_set;
+  if (map_itf_->GetKeySemanticVehicles(&semantic_vehicle_set) != kSuccess) {
+    printf("[MPDM]fail to get key vehicles.\n");
+    return kWrongStatus;
+  }
+
+  common::Vehicle ego_vehicle;
+  if (map_itf_->GetEgoVehicle(&ego_vehicle) != kSuccess) {
+    printf("[MPDM]fail to get ego vehicle.\n");
+    return kWrongStatus;
+  }
     std::vector<std::vector<double>> path;
     // Your implementation here
-    return path;
+    return kSuccess;
 }
 
 double RRTStar::rand_uniform() {
@@ -126,7 +142,9 @@ int main() {
     // Initialize environment
 
     RRTStar rrt(param, env);
-    std::vector<std::vector<double>> path = rrt.SearchCoarseTrajectoryViaRRTStar();
+   if(rrt.SearchCoarseTrajectoryViaRRTStar() != kSuccess){
+        printf("get coarse traj failed");
+   }
 
     // Process the resulting path as needed
 
