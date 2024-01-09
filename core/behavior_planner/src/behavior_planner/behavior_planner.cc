@@ -30,6 +30,7 @@ ErrorType BehaviorPlanner::RunMpdm() {
   } else {
     printf("[MPDM]MPDM failed.\n");
     printf("[MPDM]Time multi behavior judged in %lf ms.\n", timer.toc());
+    std::cout<<"begin fail" <<std::endl;
     return kWrongStatus;
   }
   return kSuccess;
@@ -46,8 +47,6 @@ ErrorType BehaviorPlanner::RunRoutePlanner(const int nearest_lane_id) {
   }
   State ego_state;
   map_itf_->GetEgoState(&ego_state);
-  ego_state.output("/home/liuqiao/project/ego_state.txt");
-  ego_state.print();
   p_route_planner_->set_ego_state(ego_state);
   p_route_planner_->set_nearest_lane_id(nearest_lane_id);
   if (p_route_planner_->RunOnce() == kSuccess) {
@@ -313,9 +312,9 @@ ErrorType BehaviorPlanner::OpenloopSimForward(
 
     // * update and trace
     cur_ego_vehicle.set_state(ego_state);
-    std::cout << "lqlqlql" << std::endl;
-    ego_state.output("/home/liuqiao/project/ego_state.txt");
-    ego_state.print();
+    // std::cout << "lqlqlql" << std::endl;
+    // ego_state.output("/home/liuqiao/project/ego_state.txt");
+    // ego_state.print();
     for (auto& s : state_cache) {
       semantic_vehicle_set_tmp.semantic_vehicles.at(s.first).vehicle.set_state(
           s.second);
@@ -334,6 +333,7 @@ ErrorType BehaviorPlanner::SampleByBezier(
     vec_E<common::Vehicle>* traj,
     std::unordered_map<int, vec_E<common::Vehicle>>* surround_trajs) {
   traj->clear();
+  common::writeToLogFile("enter sample by bezier");
   // traj->push_back(ego_semantic_vehicle.vehicle);
   // surround_trajs->clear();
   // for (const auto v : agent_vehicles.semantic_vehicles) {
@@ -433,11 +433,12 @@ ErrorType BehaviorPlanner::SimulateEgoBehavior(
   //                          surround_trajs) != kSuccess) {
   //   printf("[MPDM]multi agent forward under %d failed.\n",
   //          static_cast<int>(ego_behavior));
-  //   }
+    // }
     if (OpenloopSimForward(ego_semantic_vehicle, semantic_vehicle_set, traj,
                            surround_trajs) != kSuccess) {
       printf("[MPDM]open loop forward under %d failed.\n",
              static_cast<int>(ego_behavior));
+             common::writeToLogFile("[MPDM]open loop forward under %d failed");
       return kWrongStatus;
     }
   
@@ -458,6 +459,7 @@ ErrorType BehaviorPlanner::EvaluateMultiPolicyTrajs(
   if (num_valid_behaviors < 1) return kWrongStatus;
 
   vec_E<common::Vehicle> traj;
+ // common::writeToLogFile(traj.size());
   LateralBehavior behavior = common::LateralBehavior::kUndefined;
   decimal_t min_score = kInf;
   decimal_t des_vel = 0.0;
@@ -584,6 +586,9 @@ ErrorType BehaviorPlanner::EvaluateSinglePolicyTraj(
     cost_action += 0.5;
   }
   *score = cost_action + cost_safety + cost_efficiency;
+  common::writeToLogFile(std::to_string(cost_action));
+  common::writeToLogFile(std::to_string(cost_safety));
+  common::writeToLogFile(std::to_string(cost_efficiency));
   printf(
       "[CostDebug]behaivor %d: (action %lf, safety %lf, efficiency ego %lf, "
       "leading %lf).\n",
@@ -683,7 +688,9 @@ ErrorType BehaviorPlanner::MultiAgentSimForward(
         printf("[MPDM]fail to forward with leading vehicle.\n");
         return kWrongStatus;
       }
-    state.output("/home/liuqiao/project/state.txt");
+    std::cout << "lqlqlql" << std::endl;
+    state.output("/home/liuqiao/project/ego_state.txt");
+    state.print();
       // update state
       state.time_stamp = init_stamp + (i + 1) * sim_resolution_;
       state_cache.insert(std::make_pair(v.first, state));

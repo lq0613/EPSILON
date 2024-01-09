@@ -6,6 +6,20 @@
 #include <fstream>
 
 namespace common {
+ template<typename T>
+void writeToLogFile(const T& data) {
+    const std::string filePath = "/home/liuqiao/project/log.txt";
+    std::ofstream outputFile(filePath, std::ios::app);
+
+    if (!outputFile.is_open()) {
+        std::cerr << "Error opening file: " << filePath << std::endl;
+        return;
+    }
+
+    outputFile << data << std::endl;
+    outputFile.close();
+}
+
 struct State {
   decimal_t time_stamp{0.0};
   Vecf<2> vec_position{Vecf<2>::Zero()};
@@ -25,7 +39,7 @@ struct State {
     printf(" -- steer: %lf.\n", steer);
   }
   void output(const std::string& filename) const {
-        std::ofstream outfile(filename);
+        std::ofstream outfile(filename, std::ios::app);
 
         if (outfile.is_open()) {
             outfile << "State:\n";

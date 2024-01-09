@@ -23,5 +23,10 @@ replace the way to get forward traj.
 只看到了mpdm，没看到eudm
 
 1.6
-打开ai_agent之后，才输出成功，是不是不打开ai_agent，是没有开环闭环模拟初始轨迹的。
+打开ai_agent之后，才输出成功，结论是不打开ai_agent，是没有开环闭环模拟初始轨迹的。
+不打开ai_agent，看不到输出了log日志。
+问题不在上面。调试发现好像mpdm没有进去。
 
+1.9
+playgrounds 文件夹好像存放的环境信息。
+启动命令中可选地图、eudm或在mpdm的决策器，前期的修改都在mpdm上呢！！
