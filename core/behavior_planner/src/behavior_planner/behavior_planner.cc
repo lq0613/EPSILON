@@ -193,6 +193,7 @@ ErrorType BehaviorPlanner::MultiBehaviorJudge(
   int num_available_behaviors = static_cast<int>(potential_behaviors.size());
 
   // TicToc timer;
+  //根据潜在的决策：三种（左右变道及不变道），模拟trajs
   for (int i = 0; i < num_available_behaviors; i++) {
     vec_E<common::Vehicle> traj;
     std::unordered_map<int, vec_E<common::Vehicle>> sur_trajs;
@@ -205,6 +206,8 @@ ErrorType BehaviorPlanner::MultiBehaviorJudge(
     }
     valid_behaviors.push_back(potential_behaviors[i]);
     valid_forward_trajs.push_back(traj);
+    common::writeToLogFile("valid_forward_trajs -> size()");
+    common::writeToLogFile(valid_forward_trajs.size());
     valid_surround_trajs.push_back(sur_trajs);
   }
   // printf("[Summary]Time in simulate all the behaviors: %lf ms.\n",
@@ -270,6 +273,7 @@ ErrorType BehaviorPlanner::OpenloopSimForward(
     vec_E<common::Vehicle>* traj,
     std::unordered_map<int, vec_E<common::Vehicle>>* surround_trajs) {
   traj->clear();
+  common::writeToLogFile("[MPDM]enter openloop sim forward");
   traj->push_back(ego_semantic_vehicle.vehicle);
   surround_trajs->clear();
   for (const auto v : agent_vehicles.semantic_vehicles) {
@@ -322,8 +326,12 @@ ErrorType BehaviorPlanner::OpenloopSimForward(
           semantic_vehicle_set_tmp.semantic_vehicles.at(s.first).vehicle);
     }
     traj->push_back(cur_ego_vehicle);
+    common::writeToLogFile("traj -> size() = ");
+    common::writeToLogFile(traj -> size());
 
   }
+  common::writeToLogFile("surrounding traj.size()=");
+  common::writeToLogFile(surround_trajs -> size());
   return kSuccess;
 }
 
@@ -334,62 +342,45 @@ ErrorType BehaviorPlanner::SampleByBezier(
     std::unordered_map<int, vec_E<common::Vehicle>>* surround_trajs) {
   traj->clear();
   common::writeToLogFile("enter sample by bezier");
-  // traj->push_back(ego_semantic_vehicle.vehicle);
-  // surround_trajs->clear();
-  // for (const auto v : agent_vehicles.semantic_vehicles) {
-  //   surround_trajs->insert(std::pair<int, vec_E<common::Vehicle>>(
-  //       v.first, vec_E<common::Vehicle>()));
-  //   surround_trajs->at(v.first).push_back(v.second.vehicle);
-  // }
+   traj->push_back(ego_semantic_vehicle.vehicle);
+  surround_trajs->clear();
+  for (const auto v : agent_vehicles.semantic_vehicles) {
+    surround_trajs->insert(std::pair<int, vec_E<common::Vehicle>>(
+        v.first, vec_E<common::Vehicle>()));
+    surround_trajs->at(v.first).push_back(v.second.vehicle);
+  }
 
-  // int num_steps_forward = static_cast<int>(sim_horizon_ / sim_resolution_);
-  // common::Vehicle cur_ego_vehicle = ego_semantic_vehicle.vehicle;
-  // common::SemanticVehicleSet semantic_vehicle_set_tmp = agent_vehicles;
-  // common::State ego_state;
-  // for (int i = 0; i < num_steps_forward; i++) {
-  //   sim_param_.idm_param.kDesiredVelocity = reference_desired_velocity_;
-  //   if (planning::OnLaneForwardSimulation::PropagateOnce(
-  //           common::StateTransformer(ego_semantic_vehicle.lane),
-  //           cur_ego_vehicle, common::Vehicle(), sim_resolution_, sim_param_,
-  //           &ego_state) != kSuccess) {
-  //     return kWrongStatus;
-  //   }
-  //   std::unordered_map<int, State> state_cache;
-  //   for (auto& v : semantic_vehicle_set_tmp.semantic_vehicles) {
-  //     decimal_t desired_vel =
-  //         agent_vehicles.semantic_vehicles.at(v.first).vehicle.state().velocity;
-  //     sim_param_.idm_param.kDesiredVelocity = desired_vel;
-  //     common::State agent_state;
-  //     if (planning::OnLaneForwardSimulation::PropagateOnce(
-  //             common::StateTransformer(v.second.lane), v.second.vehicle,
-  //             common::Vehicle(), sim_resolution_, sim_param_,
-  //             &agent_state) != kSuccess) {
-  //       return kWrongStatus;
-  //     }
-  //     state_cache.insert(std::make_pair(v.first, agent_state));
-  //   }
-
-  //   bool is_collision = false;
-  //   map_itf_->CheckIfCollision(ego_semantic_vehicle.vehicle.param(), ego_state,
-  //                              &is_collision);
-  //   if (is_collision) return kWrongStatus;
+  int num_steps_forward = static_cast<int>(sim_horizon_ / sim_resolution_);
+  common::Vehicle cur_ego_vehicle = ego_semantic_vehicle.vehicle;
+  common::State ego_state;
+  //to do 
+  //push_back 10 val to traj
+  //这里起点信息肯定是知道的，能不能按照apollo的多项式插值直接得到轨迹呢？？
+  for (int i = 0; i < num_steps_forward; i++) {
+    sim_param_.idm_param.kDesiredVelocity = reference_desired_velocity_;
+    if (planning::OnLaneForwardSimulation::PropagateOnce(
+            common::StateTransformer(ego_semantic_vehicle.lane),
+            cur_ego_vehicle, common::Vehicle(), sim_resolution_, sim_param_,
+            &ego_state) != kSuccess) {
+      return kWrongStatus;
+    }
+    bool is_collision = false;
+    map_itf_->CheckIfCollision(ego_semantic_vehicle.vehicle.param(), ego_state,
+                               &is_collision);
+    if (is_collision) return kWrongStatus;
 
   //   // * update and trace
-  //   cur_ego_vehicle.set_state(ego_state);
-  //   ego_state.output("ego_state");
-  //   for (auto& s : state_cache) {
-  //     semantic_vehicle_set_tmp.semantic_vehicles.at(s.first).vehicle.set_state(
-  //         s.second);
-  //     surround_trajs->at(s.first).push_back(
-  //         semantic_vehicle_set_tmp.semantic_vehicles.at(s.first).vehicle);
-  //   }
-  //   traj->push_back(cur_ego_vehicle);
-  // }
+    cur_ego_vehicle.set_state(ego_state);
+  traj->push_back(cur_ego_vehicle);
+  common::writeToLogFile("traj -> size() = ");
+  common::writeToLogFile(traj -> size());
+   }
+   
 
   return kSuccess;
 }
 
-
+//这里接收的是单独的决策
 ErrorType BehaviorPlanner::SimulateEgoBehavior(
     const common::Vehicle& ego_vehicle, const LateralBehavior& ego_behavior,
     const common::SemanticVehicleSet& semantic_vehicle_set,
@@ -399,6 +390,7 @@ ErrorType BehaviorPlanner::SimulateEgoBehavior(
   decimal_t forward_lane_len =
       std::max(ego_vehicle.state().velocity * 10.0, 50.0);//10s或着50m为上限。
   common::Lane ego_reflane;
+  //先获得参考线
   if (map_itf_->GetRefLaneForStateByBehavior(
           ego_vehicle.state(), p_route_planner_->navi_path(), ego_behavior,
           forward_lane_len, max_backward_len, false,
@@ -434,11 +426,11 @@ ErrorType BehaviorPlanner::SimulateEgoBehavior(
   //   printf("[MPDM]multi agent forward under %d failed.\n",
   //          static_cast<int>(ego_behavior));
     // }
-    if (OpenloopSimForward(ego_semantic_vehicle, semantic_vehicle_set, traj,
+    if (SampleByBezier(ego_semantic_vehicle, semantic_vehicle_set, traj,
                            surround_trajs) != kSuccess) {
       printf("[MPDM]open loop forward under %d failed.\n",
              static_cast<int>(ego_behavior));
-             common::writeToLogFile("[MPDM]open loop forward under %d failed");
+             common::writeToLogFile("[Sample]open loop forward under %d failed");
       return kWrongStatus;
     }
   
@@ -586,9 +578,9 @@ ErrorType BehaviorPlanner::EvaluateSinglePolicyTraj(
     cost_action += 0.5;
   }
   *score = cost_action + cost_safety + cost_efficiency;
-  common::writeToLogFile(std::to_string(cost_action));
-  common::writeToLogFile(std::to_string(cost_safety));
-  common::writeToLogFile(std::to_string(cost_efficiency));
+  // common::writeToLogFile(std::to_string(cost_action));
+  // common::writeToLogFile(std::to_string(cost_safety));
+  // common::writeToLogFile(std::to_string(cost_efficiency));
   printf(
       "[CostDebug]behaivor %d: (action %lf, safety %lf, efficiency ego %lf, "
       "leading %lf).\n",

@@ -6,7 +6,7 @@
 #include <fstream>
 
 namespace common {
- template<typename T>
+template<typename T>
 void writeToLogFile(const T& data) {
     const std::string filePath = "/home/liuqiao/project/log.txt";
     std::ofstream outputFile(filePath, std::ios::app);
@@ -39,7 +39,7 @@ struct State {
     printf(" -- steer: %lf.\n", steer);
   }
   void output(const std::string& filename) const {
-        std::ofstream outfile(filename, std::ios::app);
+        std::ofstream outfile(filename,std::ios::app);
 
         if (outfile.is_open()) {
             outfile << "State:\n";

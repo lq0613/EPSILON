@@ -325,6 +325,7 @@ class OnLaneForwardSimulation {
     auto sim_param = param;
 
     // * Step I: Calculate steering
+    //根据纯追踪控制算法计算车辆期望的转向角度。在纯追踪控制中，车辆试图追踪一个给定的路径，并通过调整转向角度来实现
     bool steer_calculation_failed = false;
     common::FrenetState current_fs;
     if (stf.GetFrenetStateFromState(current_state, &current_fs) != kSuccess ||
@@ -332,9 +333,11 @@ class OnLaneForwardSimulation {
       // * ego Frenet state invalid or ego vehicle reverse gear
       steer_calculation_failed = true;
     }
+    current_fs.output("/home/liuqiao/frenet_state.txt");
 
     decimal_t steer, velocity;
     if (!steer_calculation_failed) {
+      //计算一个在一定范围内受车辆速度影响的前瞻距离
       decimal_t approx_lookahead_dist =
           std::min(std::max(param.steer_control_min_lookahead_dist,
                             current_state.velocity * param.steer_control_gain),
@@ -359,12 +362,14 @@ class OnLaneForwardSimulation {
         stf.GetFrenetStateFromState(leading_vehicle.state(), &leading_fs) !=
             kSuccess) {
       // ~ Without leading vehicle
+      //common::writeToLogFile("without leading vehicle");
       CalcualateVelocityUsingIdm(current_state.velocity, dt, sim_param,
                                  &velocity);
     } else {
       // ~ With leading vehicle
       // * For IDM, vehicle length is subtracted to get the 'net' distance
       // * between ego vehicle and the leading vehicle.
+      common::writeToLogFile("with leading vehicle");
       decimal_t eqv_vehicle_len;
       GetIdmEquivalentVehicleLength(stf, ego_vehicle, leading_vehicle,
                                     leading_fs, &eqv_vehicle_len);
@@ -380,6 +385,14 @@ class OnLaneForwardSimulation {
                           sim_param, desired_state);
     return kSuccess;
   }
+
+static ErrorType PropagateOnceBySample(const common::StateTransformer& stf,
+                                 const common::Vehicle& ego_vehicle,
+                                 const Vehicle& leading_vehicle,
+                                 const decimal_t& dt, const Param& param,
+                                 State* desired_state){
+                                  
+                                 }
 
   // ~ Propagate using const velocity and steer
   static ErrorType PropagateOnce(const decimal_t& desired_vel,
@@ -428,6 +441,8 @@ class OnLaneForwardSimulation {
     return kSuccess;
   }
 
+  //lq comment
+  //计算车辆在给定前瞻点下的期望转向角度
   static ErrorType CalcualateSteer(const common::StateTransformer& stf,
                                    const State& current_state,
                                    const FrenetState& current_fs,

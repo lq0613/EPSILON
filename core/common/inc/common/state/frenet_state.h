@@ -56,6 +56,24 @@ struct FrenetState {
     printf("-- vec_ds: (%lf, %lf, %lf).\n", vec_ds[0], vec_ds[1], vec_ds[2]);
     if (!is_ds_usable) printf("-- warning: ds not usable.\n");
   }
+void output(const char* file_path) const {
+    std::ofstream outfile(file_path, std::ios::app);
+
+    if (outfile.is_open()) {
+        outfile << "FrenetState:\n";
+        outfile << " -- time_stamp: " << time_stamp << ".\n";
+        outfile << " -- vec_s: (" << vec_s[0] << ", " << vec_s[1] << ", " << vec_s[2] << ").\n";
+        outfile << " -- vec_dt: (" << vec_dt[0] << ", " << vec_dt[1] << ", " << vec_dt[2] << ").\n";
+        outfile << " -- vec_ds: (" << vec_ds[0] << ", " << vec_ds[1] << ", " << vec_ds[2] << ").\n";
+        if (!is_ds_usable) outfile << " -- warning: ds not usable.\n";
+
+        outfile.close();
+        std::cout << "Data has been written to " << file_path << std::endl;
+    } else {
+        std::cout << "Unable to open file: " << file_path << std::endl;
+    }
+}
+
 };
 
 }  // namespace common

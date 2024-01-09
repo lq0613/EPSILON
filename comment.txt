@@ -30,3 +30,5 @@ replace the way to get forward traj.
 1.9
 playgrounds 文件夹好像存放的环境信息。
 启动命令中可选地图、eudm或在mpdm的决策器，前期的修改都在mpdm上呢！！
+潜在的决策行为也是初轨迹的一个输入，这个还比较麻烦了
+先自己生成一条轨迹吧
